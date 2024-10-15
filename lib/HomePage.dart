@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reown_appkit/reown_appkit.dart';
+import 'package:url_launcher/url_launcher.dart'; // Required for launching external apps
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -13,7 +14,6 @@ class _MyHomePageState extends State<MyHomePage> {
   String walletAddress = 'No Address';
   String _balance = '0';
   bool isLoading = false;
-
 
   @override
   void initState() {
@@ -82,9 +82,35 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  // Method to open the selected wallet app (e.g., MetaMask)
+  void openWalletApp() {
+    final selectedWallet = _appKitModal?.selectedWallet?.listing.name;
+
+    if (selectedWallet != null) {
+      // Print the name of the selected wallet
+      debugPrint('Selected wallet: $selectedWallet');
+
+      if (selectedWallet.toLowerCase().contains('metamask')) {
+        final Uri metamaskUri = Uri.parse("metamask://");
+        launchUrl(metamaskUri, mode: LaunchMode.externalApplication);
+      } else {
+        // Handle other wallets if needed
+        debugPrint('No wallet app to open or unsupported wallet.');
+      }
+    } else {
+      debugPrint('No wallet selected.');
+    }
+  }
+
+// Widget for displaying a loading indicator
+  Widget loadingIndicator() {
+    return isLoading
+        ? const CircularProgressIndicator()
+        : const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Print the appKit instance for debugging
     debugPrint('AppKitModal instance: $_appKitModal');
 
     return Scaffold(
@@ -114,6 +140,27 @@ class _MyHomePageState extends State<MyHomePage> {
             Visibility(
               visible: _appKitModal?.isConnected ?? false,
               child: AppKitModalAccountButton(appKit: _appKitModal!),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Show loading indicator while waiting for wallet connection
+            loadingIndicator(),
+
+            const SizedBox(height: 20),
+
+            // Button to open the wallet app (e.g., MetaMask)
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                });
+                openWalletApp();
+                setState(() {
+                  isLoading = false;
+                });
+              },
+              child: const Text('Open Wallet App'),
             ),
           ],
         ),
